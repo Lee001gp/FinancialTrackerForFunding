@@ -3,11 +3,13 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- System / tenancy
 CREATE TABLE IF NOT EXISTS tenants (id uuid PRIMARY KEY, name text NOT NULL, created_at timestamptz DEFAULT now());
 CREATE TABLE IF NOT EXISTS platform_users (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), email text UNIQUE NOT NULL, password_hash text NOT NULL, roles text[] NOT NULL DEFAULT '{}', created_at timestamptz DEFAULT now());
+CREATE TABLE IF NOT EXISTS audit_log_signatures (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), tenant_id uuid NOT NULL REFERENCES tenants(id), chain_sequence bigint NOT NULL, signature text NOT NULL, created_at timestamptz DEFAULT now());
 CREATE TABLE IF NOT EXISTS tenant_domains (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), tenant_id uuid NOT NULL REFERENCES tenants(id), domain text NOT NULL, verified boolean NOT NULL DEFAULT false, created_at timestamptz DEFAULT now());
 CREATE TABLE IF NOT EXISTS tenant_branding (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), tenant_id uuid NOT NULL REFERENCES tenants(id), logo_url text, primary_color text, secondary_color text, created_at timestamptz DEFAULT now());
 CREATE TABLE IF NOT EXISTS tenant_features (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), tenant_id uuid NOT NULL REFERENCES tenants(id), feature_key text NOT NULL, enabled boolean NOT NULL DEFAULT false, created_at timestamptz DEFAULT now(), UNIQUE(tenant_id, feature_key));
 CREATE TABLE IF NOT EXISTS tenant_terms (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), tenant_id uuid NOT NULL REFERENCES tenants(id), term_key text NOT NULL, label text NOT NULL, created_at timestamptz DEFAULT now(), UNIQUE(tenant_id, term_key));
 CREATE TABLE IF NOT EXISTS tenant_templates (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), tenant_id uuid NOT NULL REFERENCES tenants(id), template_name text NOT NULL, config jsonb NOT NULL DEFAULT '{}', created_at timestamptz DEFAULT now());
+CREATE TABLE IF NOT EXISTS platform_settings (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), setting_key text UNIQUE NOT NULL, setting_value jsonb NOT NULL DEFAULT '{}', updated_at timestamptz DEFAULT now());
 
 -- Identity / RBAC
 CREATE TABLE IF NOT EXISTS users (id uuid PRIMARY KEY, tenant_id uuid NOT NULL REFERENCES tenants(id), email text NOT NULL, password_hash text NOT NULL, roles text[] NOT NULL DEFAULT '{}', lock_until timestamptz, failed_attempts int NOT NULL DEFAULT 0, created_at timestamptz DEFAULT now(), UNIQUE(tenant_id,email));
@@ -102,7 +104,7 @@ BEGIN
     'category_libraries','custom_fields','custom_field_values','workflow_templates','workflow_instances','workflow_steps','workflow_step_assignments','approvals','sla_timers',
     'compliance_rules','rule_violations','risk_scores','cases','case_events','escalations',
     'reporting_periods','reports','exports','audit_packs','download_logs',
-    'jobs','password_reset_tokens','idempotency_keys','audit_log_events','audit_log_chain',
+    'jobs','password_reset_tokens','idempotency_keys','audit_log_events','audit_log_chain','audit_log_signatures',
     'tenant_domains','tenant_branding','tenant_features','tenant_terms','tenant_templates'
   ]
   LOOP

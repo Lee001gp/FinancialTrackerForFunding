@@ -2,7 +2,7 @@
 
 ## API route groups
 - `/auth/login`, `/auth/logout`, `/auth/password-reset/request`, `/auth/password-reset/confirm`
-- `/platform/tenants`, `/platform/users` (platform admin)
+- `/platform/tenants`, `/platform/users`, `/platform/health`, `/platform/audit`, `/platform/settings` (platform admin)
 - `/tenant-users`
 - `/tenant-config/features`, `/tenant-config/terms`, `/tenant-config/categories`, `/tenant-config/workflows`, `/tenant-config/custom-fields`, `/tenant-config/templates`
 - `/programs`
@@ -18,8 +18,9 @@
 - Dashboard
 - Tenants CRUD
 - Platform users CRUD
-- System health
-- Global settings card
+- System health (DB/queue/uploads)
+- Global settings editor
+- Platform-wide audit feed
 
 ## Tenant portal
 - Dashboard

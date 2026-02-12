@@ -4,7 +4,7 @@
 - ✅ Core multi-tenant backend + RLS + tenant DB session context
 - ✅ Expanded schema covering required domain groups including categories/custom fields
 - ✅ API modules: auth, platform, tenant-users, tenant config, programs, counterparties, allocations, budgets, transactions, reports, compliance, audit
-- ✅ Platform admin tenant + user management endpoints
+- ✅ Platform admin endpoints: tenant/user CRUD + health + global settings + platform audit feed
 - ✅ Tenant config APIs: features, terms, templates, categories, workflow templates, custom field definitions
 - ✅ Counterparty onboarding APIs: profile, documents, bank account versioning
 - ✅ Program and disbursement APIs for portfolio setup
