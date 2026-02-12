@@ -4,12 +4,12 @@
 - `/auth/login`, `/auth/logout`, `/auth/password-reset/request`, `/auth/password-reset/confirm`
 - `/platform/tenants`, `/platform/users` (platform admin)
 - `/tenant-users`
-- `/tenant-config/features`, `/tenant-config/terms`, `/tenant-config/categories`, `/tenant-config/workflows`, `/tenant-config/custom-fields`
+- `/tenant-config/features`, `/tenant-config/terms`, `/tenant-config/categories`, `/tenant-config/workflows`, `/tenant-config/custom-fields`, `/tenant-config/templates`
 - `/programs`
-- `/counterparties`, `/counterparties/:id/profile`, `/counterparties/:id/bank-accounts`
-- `/allocations`
+- `/counterparties`, `/counterparties/:id/profile`, `/counterparties/:id/bank-accounts`, `/counterparties/:id/documents`
+- `/allocations`, `/allocations/:id/disbursements`
 - `/budgets`
-- `/transactions/draft`, `/transactions/drafts/offline-sync`, `/transactions/:id/attachments`, `/transactions/attachments/:attachmentId/download`, `/transactions/:id/submit`, `/transactions/:id/review`
+- `/transactions/review-queue`, `/transactions/draft`, `/transactions/drafts/offline-sync`, `/transactions/:id/attachments`, `/transactions/attachments/:attachmentId/download`, `/transactions/:id/submit`, `/transactions/:id/review`
 - `/reports/generate`, `/reports/dashboard`, `/reports/exports/transactions.csv`, `/reports/:id/pdf`
 - `/compliance/violations`, `/compliance/cases`, `/compliance/cases/:id`, `/compliance/cases/:id/events`
 - `/audit/events`, `/audit/verify-chain`, `/audit/pack/:allocationId`
@@ -25,6 +25,7 @@
 - Dashboard
 - Programs
 - Allocations
+- Disbursements
 - Review queue
 - Compliance cases
 - Reports/exports

@@ -5,8 +5,10 @@
 - ✅ Expanded schema covering required domain groups including categories/custom fields
 - ✅ API modules: auth, platform, tenant-users, tenant config, programs, counterparties, allocations, budgets, transactions, reports, compliance, audit
 - ✅ Platform admin tenant + user management endpoints
-- ✅ Tenant config console APIs: features, terms, categories, workflow templates, custom field definitions
-- ✅ Counterparty onboarding APIs: profile + bank account versioning
+- ✅ Tenant config APIs: features, terms, templates, categories, workflow templates, custom field definitions
+- ✅ Counterparty onboarding APIs: profile, documents, bank account versioning
+- ✅ Program and disbursement APIs for portfolio setup
+- ✅ Review queue API with filters for reviewer workflow
 - ✅ Compliance case management APIs: create, update status, event timeline
 - ✅ Mandatory proof enforcement on submission
 - ✅ Budget prerequisite enforcement for spend capture

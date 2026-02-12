@@ -92,4 +92,19 @@ router.post("/custom-fields", requireRole("tenant_admin"), async (req: AuthReque
   res.status(201).json({ ok: true });
 });
 
+
+
+router.get("/templates", requireRole("tenant_admin"), async (req: AuthRequest, res) => {
+  const rows = await withTenant(req.auth!.tenantId, async (client) => (await client.query("SELECT * FROM tenant_templates ORDER BY created_at DESC")).rows);
+  res.json(rows);
+});
+
+router.post("/templates", requireRole("tenant_admin"), async (req: AuthRequest, res) => {
+  const payload = z.object({ templateName: z.string().min(2), config: z.any().optional() }).parse(req.body);
+  await withTenant(req.auth!.tenantId, async (client) => {
+    await client.query("INSERT INTO tenant_templates (id,tenant_id,template_name,config) VALUES ($1,$2,$3,$4)", [uuid(), req.auth!.tenantId, payload.templateName, payload.config || {}]);
+  });
+  res.status(201).json({ ok: true });
+});
+
 export default router;

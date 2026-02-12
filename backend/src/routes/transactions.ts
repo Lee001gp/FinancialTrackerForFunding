@@ -18,6 +18,31 @@ const upload = multer({ limits: { fileSize: 10 * 1024 * 1024 } });
 const router = Router();
 router.use(authGuard);
 
+
+
+router.get("/review-queue", requireRole("reviewer", "tenant_admin"), async (req: AuthRequest, res, next) => {
+  try {
+    const programId = req.query.programId as string | undefined;
+    const allocationId = req.query.allocationId as string | undefined;
+    const status = (req.query.status as string | undefined) || "submitted";
+    const rows = await withTenant(req.auth!.tenantId, async (client) => {
+      const q = `SELECT t.* FROM transactions t
+                 JOIN allocations a ON a.id=t.allocation_id
+                 WHERE t.status=$1
+                 ${programId ? "AND a.program_id=$2" : ""}
+                 ${allocationId ? (programId ? "AND t.allocation_id=$3" : "AND t.allocation_id=$2") : ""}
+                 ORDER BY t.created_at DESC LIMIT 500`;
+      const params: any[] = [status];
+      if (programId) params.push(programId);
+      if (allocationId) params.push(allocationId);
+      return (await client.query(q, params)).rows;
+    });
+    res.json(rows);
+  } catch (e) {
+    next(e);
+  }
+});
+
 router.post("/draft", requireRole("counterparty_user", "tenant_admin"), requireIdempotencyKey, async (req: AuthRequest, res, next) => {
   try {
     const id = uuid();

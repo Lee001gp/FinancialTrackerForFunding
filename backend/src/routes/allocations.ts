@@ -27,4 +27,25 @@ router.get("/", async (req: AuthRequest, res) => {
   res.json(rows);
 });
 
+
+
+router.get("/:id/disbursements", async (req: AuthRequest, res) => {
+  const rows = await withTenant(req.auth!.tenantId, async (client) => (await client.query("SELECT * FROM disbursements WHERE allocation_id=$1 ORDER BY due_date", [req.params.id])).rows);
+  res.json(rows);
+});
+
+router.post("/:id/disbursements", requireRole("tenant_admin", "program_manager"), async (req: AuthRequest, res) => {
+  const parsed = z.object({ plannedAmount: z.number().positive(), dueDate: z.string() }).safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ code: "VALIDATION_ERROR", message: "Invalid payload", details: parsed.error.flatten() });
+  const disbId = uuid();
+  await withTenant(req.auth!.tenantId, async (client) => {
+    await client.query(
+      "INSERT INTO disbursements (id,tenant_id,allocation_id,planned_amount,due_date,status) VALUES ($1,$2,$3,$4,$5,'planned')",
+      [disbId, req.auth!.tenantId, req.params.id, parsed.data.plannedAmount, parsed.data.dueDate]
+    );
+    await appendAudit(client, req.auth!.tenantId, req.auth!.userId, "disbursement.create", "allocation", req.params.id, parsed.data);
+  });
+  res.status(201).json({ id: disbId });
+});
+
 export default router;

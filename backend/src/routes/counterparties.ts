@@ -1,4 +1,9 @@
 import { Router } from "express";
+import multer from "multer";
+import fs from "fs";
+import path from "path";
+import crypto from "crypto";
+import { env } from "../config/env";
 import { z } from "zod";
 import { v4 as uuid } from "uuid";
 import { authGuard, AuthRequest, requireRole } from "../middleware/auth";
@@ -7,6 +12,8 @@ import { appendAudit } from "../services/audit";
 
 const router = Router();
 router.use(authGuard);
+fs.mkdirSync(env.uploadsPath, { recursive: true });
+const upload = multer({ limits: { fileSize: 10 * 1024 * 1024 } });
 
 router.get("/", requireRole("tenant_admin", "reviewer", "counterparty_user"), async (req: AuthRequest, res) => {
   const rows = await withTenant(req.auth!.tenantId, async (client) => (await client.query("SELECT * FROM counterparties ORDER BY created_at DESC")).rows);
@@ -48,6 +55,30 @@ router.post("/:id/bank-accounts", requireRole("tenant_admin", "counterparty_user
     await appendAudit(client, req.auth!.tenantId, req.auth!.userId, "counterparty.bank_account.create", "counterparty", req.params.id, payload);
   });
   res.status(201).json({ ok: true });
+});
+
+
+
+router.post("/:id/documents", requireRole("tenant_admin", "counterparty_user"), upload.single("file"), async (req: AuthRequest, res) => {
+  if (!req.file) return res.status(400).json({ code: "FILE_REQUIRED", message: "Upload required" });
+  const sanitized = `${Date.now()}-${req.file.originalname.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+  const filepath = path.join(env.uploadsPath, sanitized);
+  fs.writeFileSync(filepath, req.file.buffer);
+  const sha = crypto.createHash("sha256").update(req.file.buffer).digest("hex");
+  await withTenant(req.auth!.tenantId, async (client) => {
+    await client.query(
+      `INSERT INTO counterparty_documents (id,tenant_id,counterparty_id,doc_type,storage_path,sha256)
+       VALUES ($1,$2,$3,$4,$5,$6)`,
+      [uuid(), req.auth!.tenantId, req.params.id, req.body.docType || "compliance", filepath, sha]
+    );
+    await appendAudit(client, req.auth!.tenantId, req.auth!.userId, "counterparty.document.upload", "counterparty", req.params.id, { docType: req.body.docType || "compliance" });
+  });
+  res.status(201).json({ ok: true, sha256: sha });
+});
+
+router.get("/:id/documents", requireRole("tenant_admin", "reviewer", "auditor", "counterparty_user"), async (req: AuthRequest, res) => {
+  const rows = await withTenant(req.auth!.tenantId, async (client) => (await client.query("SELECT id,doc_type,storage_path,sha256,created_at FROM counterparty_documents WHERE counterparty_id=$1 ORDER BY created_at DESC", [req.params.id])).rows);
+  res.json(rows);
 });
 
 export default router;
