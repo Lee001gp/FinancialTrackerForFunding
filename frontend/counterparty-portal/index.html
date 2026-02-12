@@ -1,0 +1,76 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset='UTF-8'/>
+  <meta name='viewport' content='width=device-width,initial-scale=1'/>
+  <title>Counterparty Portal</title>
+  <link rel='manifest' href='manifest.json'>
+  <style>
+    body{font-family:Arial;margin:0;padding-bottom:84px;background:#f6f8fa}
+    header{background:#136f63;color:#fff;padding:12px}
+    .card{margin:12px;border:1px solid #ddd;border-radius:8px;padding:12px;background:#fff}
+    input,select,button{width:100%;padding:12px;margin:6px 0;font-size:16px}
+    .bottom{position:fixed;bottom:0;left:0;right:0;display:flex;background:#fff;border-top:1px solid #ccc}
+    .bottom a{flex:1;padding:12px;text-align:center;text-decoration:none;color:#333}
+    .primary{background:#136f63;color:#fff;border:none;border-radius:8px}
+    .ok{color:#0c7a37;font-weight:bold}
+  </style>
+</head>
+<body>
+  <header><h3>Counterparty Mobile Portal</h3></header>
+  <section class='card'>
+    <h4>Add Spend Wizard</h4>
+    <p>Step 1 Allocation</p>
+    <select id='allocation'><option value='sport'>Sport Allocation</option></select>
+    <p>Step 2 Budget Line</p>
+    <select id='line'><option value='equipment'>Equipment</option></select>
+    <p>Step 3 Spend details</p>
+    <input id='amount' placeholder='Amount'>
+    <input id='date' placeholder='Date (YYYY-MM-DD)'>
+    <input id='vendor' placeholder='Vendor'>
+    <input id='description' placeholder='Description'>
+    <input id='paymentMethod' placeholder='Payment Method'>
+    <p>Step 4 Upload proof checklist</p>
+    <input id='proof' type='file' capture='environment' multiple>
+    <p>Step 5 Submit or Save Draft</p>
+    <button class='primary' id='submitBtn'>Submit</button>
+    <button id='saveBtn'>Save Offline Draft</button>
+    <p id='status'></p>
+  </section>
+  <nav class='bottom'><a>Home</a><a>Allocations</a><a><b>Add Spend</b></a><a>Tasks</a><a>Profile</a></nav>
+  <script>
+    if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js')
+    const KEY='offlineSpendDrafts';
+    const status=document.getElementById('status');
+    const read=()=>JSON.parse(localStorage.getItem(KEY)||'[]');
+    const write=(v)=>localStorage.setItem(KEY,JSON.stringify(v));
+    const payload=()=>({
+      allocationId:document.getElementById('allocation').value,
+      budgetLineId:document.getElementById('line').value,
+      amount:Number(document.getElementById('amount').value||0),
+      date:document.getElementById('date').value,
+      vendor:document.getElementById('vendor').value,
+      description:document.getElementById('description').value,
+      paymentMethod:document.getElementById('paymentMethod').value
+    });
+
+    document.getElementById('saveBtn').onclick=()=>{
+      const drafts=read(); drafts.push(payload()); write(drafts);
+      status.className='ok'; status.innerText=`Saved offline drafts: ${drafts.length}`;
+    }
+
+    async function syncDrafts(){
+      const drafts=read();
+      if(!navigator.onLine||!drafts.length) return;
+      try{
+        await fetch('/transactions/drafts/offline-sync',{method:'POST',headers:{'content-type':'application/json','idempotency-key':'web-sync-'+Date.now()},body:JSON.stringify({drafts})});
+        write([]); status.className='ok'; status.innerText='Offline drafts synced';
+      }catch(_e){ status.innerText='Offline sync pending'; }
+    }
+
+    window.addEventListener('online',syncDrafts);
+    document.getElementById('submitBtn').onclick=()=>{ status.innerText='Submit flow calls API in deployed environment'; };
+    syncDrafts();
+  </script>
+</body>
+</html>

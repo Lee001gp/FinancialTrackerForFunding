@@ -1,0 +1,13 @@
+{
+  "name": "allocation-spend-accountability-platform",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": ["backend"],
+  "scripts": {
+    "dev": "npm --workspace backend run dev",
+    "start": "npm --workspace backend run start",
+    "migrate": "npm --workspace backend run migrate",
+    "seed": "npm --workspace backend run seed",
+    "test": "npm --workspace backend run test"
+  }
+}
