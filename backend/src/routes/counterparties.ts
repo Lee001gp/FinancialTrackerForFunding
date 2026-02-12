@@ -77,7 +77,7 @@ router.post("/:id/documents", requireRole("tenant_admin", "counterparty_user"), 
 });
 
 router.get("/:id/documents", requireRole("tenant_admin", "reviewer", "auditor", "counterparty_user"), async (req: AuthRequest, res) => {
-  const rows = await withTenant(req.auth!.tenantId, async (client) => (await client.query("SELECT id,doc_type,storage_path,sha256,created_at FROM counterparty_documents WHERE counterparty_id=$1 ORDER BY created_at DESC", [req.params.id])).rows);
+  const rows = await withTenant(req.auth!.tenantId, async (client) => (await client.query("SELECT id,doc_type,sha256,created_at FROM counterparty_documents WHERE counterparty_id=$1 ORDER BY created_at DESC", [req.params.id])).rows);
   res.json(rows);
 });
 

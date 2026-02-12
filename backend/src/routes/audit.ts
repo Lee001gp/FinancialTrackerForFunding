@@ -2,6 +2,7 @@ import { Router } from "express";
 import { authGuard, AuthRequest, requireRole } from "../middleware/auth";
 import { withTenant } from "../db/pool";
 import crypto from "crypto";
+import { verifyChain } from "../utils/auditChain";
 
 const router = Router();
 router.use(authGuard);
@@ -12,15 +13,17 @@ router.get("/events", requireRole("auditor", "tenant_admin"), async (req: AuthRe
 });
 
 router.get("/verify-chain", requireRole("auditor", "tenant_admin"), async (req: AuthRequest, res) => {
-  const rows = await withTenant(req.auth!.tenantId, async (client) => (await client.query("SELECT c.prev_hash, c.hash, e.payload FROM audit_log_chain c JOIN audit_log_events e ON e.id=c.event_id ORDER BY c.sequence ASC")).rows);
-  let ok = true;
-  for (const row of rows) {
-    const computed = crypto.createHash("sha256").update(`${row.prev_hash}:${JSON.stringify(row.payload)}`).digest("hex");
-    if (computed !== row.hash) {
-      ok = false;
-      break;
-    }
-  }
+  const rows = await withTenant(req.auth!.tenantId, async (client) =>
+    (
+      await client.query(
+        `SELECT c.sequence, c.prev_hash, c.hash, e.tenant_id, e.actor_id, e.action, e.entity_type, e.entity_id, e.payload
+         FROM audit_log_chain c
+         JOIN audit_log_events e ON e.id=c.event_id
+         ORDER BY c.sequence ASC`
+      )
+    ).rows
+  );
+  const ok = verifyChain(rows as any);
   res.json({ ok, checked: rows.length });
 });
 

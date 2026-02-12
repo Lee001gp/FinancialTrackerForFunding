@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { evaluateCompliance } from "../services/compliance";
-import { nextHash, verifyChain } from "../utils/auditChain";
+import { computeAuditHash, verifyChain } from "../utils/auditChain";
 
 describe("compliance rules", () => {
   it("flags missing proof and over budget", () => {
@@ -27,12 +27,49 @@ describe("compliance rules", () => {
 
 describe("audit chain", () => {
   it("verifies deterministic chain", () => {
-    const p = { a: 1 };
-    const h = nextHash("GENESIS", p);
-    expect(verifyChain([{ prev_hash: "GENESIS", hash: h, payload: p }])).toBe(true);
+    const payload = { a: 1 };
+    const hash = computeAuditHash({
+      tenantId: "t1",
+      actorId: "u1",
+      action: "create",
+      entityType: "allocation",
+      entityId: "e1",
+      payload,
+      sequence: 1,
+      prevHash: "GENESIS",
+    });
+    expect(
+      verifyChain([
+        {
+          tenant_id: "t1",
+          actor_id: "u1",
+          action: "create",
+          entity_type: "allocation",
+          entity_id: "e1",
+          payload,
+          sequence: 1,
+          prev_hash: "GENESIS",
+          hash,
+        },
+      ])
+    ).toBe(true);
   });
 
   it("detects tampering", () => {
-    expect(verifyChain([{ prev_hash: "GENESIS", hash: "wrong", payload: { a: 1 } }])).toBe(false);
+    expect(
+      verifyChain([
+        {
+          tenant_id: "t1",
+          actor_id: "u1",
+          action: "create",
+          entity_type: "allocation",
+          entity_id: "e1",
+          payload: { a: 1 },
+          sequence: 1,
+          prev_hash: "GENESIS",
+          hash: "wrong",
+        },
+      ])
+    ).toBe(false);
   });
 });
